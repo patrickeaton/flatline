@@ -1,0 +1,102 @@
+#!/usr/bin/env php
+<?php
+
+function merge_settings($file_settings, $command_line_settings){
+    return array_merge($file_settings,$command_line_settings);
+}
+
+function get_command_line_settings($arguments){
+
+    $pretty_keys = array(
+        "-h"  => "host",
+        "-n"  => "new_host",
+        "-o"  => "output_dir",
+        "-d"  => "depth",
+        "-au" => "auth_user",
+        "-ap" => "auth_pass",
+        "-p"  => "port",
+    );
+
+    $settings = array();
+    while(!empty($arguments)){
+        $key = $pretty_keys[array_shift($arguments)];
+        $value = array_shift($arguments);
+        $settings[$key] = $value;
+    }
+    return $settings;
+}
+
+function get_file_settings($filename){
+    if(file_exists($filename)){
+        $content = file_get_contents($filename);
+        return json_decode($content,JSON_PRETTY_PRINT);
+    }else{
+        return array();
+    }
+}
+
+function save_settings($filename,$settings){
+    file_put_contents($filename,json_encode($settings,JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES  ));
+    chmod($filename, 0666);
+}
+
+function delete_settings_file($filename){
+    if(file_exists($filename)){
+        unlink($filename);
+    }
+}
+
+$argv = $_SERVER["argv"];
+
+//Get rid of the program name
+array_shift($argv);
+
+$command = array_shift($argv);
+
+switch($command){
+    case "init":
+        $settings = get_command_line_settings($argv);
+        save_settings("flatline.json",$settings);
+        echo "File flatline.json created";
+        break;
+    case "update":
+        $file_settings = get_file_settings("flatline.json");
+        $cl_settings = get_command_line_settings($argv);
+        $settings = merge_settings($file_settings,$cl_settings);
+        save_settings("flatline.json",$settings);
+        echo "File flatline.json updated.";
+        break;
+    case "delete":
+        delete_settings_file("flatline.json");
+        echo "File flatline.json deleted.";
+        break;
+    case "process":
+        echo "Processing...\r\n";
+        echo "    [Things Will Happen Here] \r\n";
+        echo "Done. \r\n";
+        break;
+    case "help":
+    default:
+        echo "Flatline Console Tool
+
+Usage:
+ command [options]
+
+Options:
+ -h              Current Host
+ -n              New Host (Will update css and links)
+ -o              Output directory (Default to current working directory)
+ -d              Depth (How deep it will search, default to unlimited)
+ -au             Authentication Username
+ -ap             Authentication Password
+ -p              Port
+
+Available commands:
+ help            Displays help for a command
+ init            Create a new Flatline file
+ update          Update an existing Flatline file
+ delete          Remove an existing Flatline file
+ process         Process the Flatline file
+ ";
+    exit;
+}
