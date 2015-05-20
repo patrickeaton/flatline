@@ -2,6 +2,6 @@
     "name": "patrickeaton/flatline",
     "description": "A command line tool to flatten and edit existing dynamic sites",
     "require": {
-        "php": ">=5.4.0",
+        "php": ">=5.4.0"
     }
 }
